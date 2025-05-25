@@ -177,7 +177,47 @@ namespace NotePad
             }
         }
 
-//000
+        private void rtbText_TextChanged(object sender, EventArgs e)
+        {
+            // 只有當isUndo這個變數是false的時候，才能堆疊文字編輯紀錄
+            if (isUndoRedo == false)
+            {
+                SaveCurrentStateToStack(); // 將當前的文本內容加入堆疊
+                redoStack.Clear();            // 清空重作堆疊
+
+                // 確保堆疊中只保留最多10個紀錄
+                if (undoStack.Count > MaxHistoryCount)
+                {
+                    // 用一個臨時堆疊，將除了最下面一筆的文字記錄之外，將文字紀錄堆疊由上而下，逐一移除再堆疊到臨時堆疊之中
+                    Stack<MemoryStream> tempStack = new Stack<MemoryStream>();
+                    for (int i = 0; i < MaxHistoryCount; i++)
+                    {
+                        tempStack.Push(undoStack.Pop());
+                    }
+                    undoStack.Clear(); // 清空堆疊
+                                       // 文字編輯堆疊紀錄清空之後，再將暫存堆疊（tempStack）中的資料，逐一放回到文字編輯堆疊紀錄
+                    foreach (MemoryStream item in tempStack)
+                    {
+                        undoStack.Push(item);
+                    }
+                }
+                UpdateListBox(); // 更新 ListBox
+            }
+        }
+
+        // 更新 ListBox
+        void UpdateListBox()
+        {
+            listUndo.Items.Clear(); // 清空 ListBox 中的元素
+
+            // 將堆疊中的內容逐一添加到 ListBox 中
+            foreach (MemoryStream item in undoStack)
+            {
+                listUndo.Items.Add(item);
+            }
+        }
+
+        // 初始化字體下拉選單
         private void InitializeFontComboBox()
         {
             // 將所有系統字體名稱添加到字體選擇框中
